@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: db_lab3
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
