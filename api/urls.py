@@ -26,5 +26,3 @@ urlpatterns = [
     path('student-grades/<int:student_id>/', StudentGrades.as_view(), name='student_grades'),
     path('free-rooms/', FreeRooms.as_view(), name='free_rooms'),
 ]
-
-
