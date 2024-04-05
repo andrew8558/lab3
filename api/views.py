@@ -65,6 +65,11 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ListSchedule
+        return ScheduleSerializer
+
 
 class GradeViewSet(viewsets.ModelViewSet):
     permissions = [permissions.IsAuthenticated]

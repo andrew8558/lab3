@@ -72,3 +72,11 @@ class GetTeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = '__all__'
+
+
+class ListSchedule(serializers.ModelSerializer):
+    course = CourseSerializer()
+
+    class Meta:
+        model = Schedule
+        fields = '__all__'
