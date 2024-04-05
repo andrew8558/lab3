@@ -38,8 +38,6 @@ class StudentViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
     queryset = Student.objects.all()
 
-    basename = 'student'
-
     def get_queryset(self):
         class_id = self.request.query_params.get('class_id')
         if class_id:
@@ -101,8 +99,8 @@ class ClassByTeacherKey(APIView):
     permissions = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
-        class_instance = Class.objects.get(teacher__id=pk)
-        serializer = ClassSerializer(class_instance)
+        class_obj = Class.objects.get(teacher__id=pk)
+        serializer = ClassSerializer(class_obj)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -126,18 +124,16 @@ class SubjectInClass(APIView):
         date = request.data.get('date')
         lesson_number = request.data.get('lesson_number')
 
-        try:
-            cur_class = Class.objects.get(letter=class_letter, number=class_number)
-            schedule = Schedule.objects.get(class_assigned=cur_class, day_of_week=datetime.datetime.strptime(date, '%Y-%m-%d'), number=lesson_number)
-            subject = schedule.course.subject.name
-            serializer = DisciplineSerializer(subject)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        finally:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        cur_class = Class.objects.get(letter=class_letter, number=class_number)
+        schedule = Schedule.objects.get(class_assigned=cur_class, day_of_week=datetime.datetime.strptime(date, '%Y-%m-%d'), number=lesson_number)
+        subject = schedule.course.subject.name
+        serializer = DisciplineSerializer(subject)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CountTeachersPerDiscipline(APIView):
     permissions = [permissions.IsAuthenticated]
+
     def get(self, request):
         teachers_per_discipline = defaultdict(set)
         courses = Course.objects.all()
@@ -150,19 +146,17 @@ class CountTeachersPerDiscipline(APIView):
 
 class SameSubjectsTeacherICT(APIView):
     permissions = [permissions.IsAuthenticated]
+
     def get(self, request, pk):
-        try:
-            cur_class = Class.objects.get(pk=pk)
-            ict = Discipline.objects.get(name="Информатика")
-            course = Course.objects.get(class_id=cur_class, subject=ict)
-            teacher_ict = course.teacher
-            teacher_ict_courses = Course.objects.filter(teacher=teacher_ict)
-            subjects_taught_by_teacher = set([course.subject for course in teacher_ict_courses])
-            teachers = Teacher.objects.filter(course__subject__in=subjects_taught_by_teacher).exclude(id=teacher_ict.id).distinct()
-            serializer = TeacherSerializer(teachers, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        finally:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        cur_class = Class.objects.get(pk=pk)
+        ict = Discipline.objects.get(name="Информатика")
+        course = Course.objects.get(class_id=cur_class, subject=ict)
+        teacher_ict = course.teacher
+        teacher_ict_courses = Course.objects.filter(teacher=teacher_ict)
+        subjects_taught_by_teacher = set([course.subject for course in teacher_ict_courses])
+        teachers = Teacher.objects.filter(course__subject__in=subjects_taught_by_teacher).exclude(id=teacher_ict.id).distinct()
+        serializer = TeacherSerializer(teachers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class GenderCountsPerClass(APIView):
@@ -173,9 +167,9 @@ class GenderCountsPerClass(APIView):
         gender_counts = class_obj.student_set.values('gender').annotate(count=Count('gender'))
         gender_counts_dict = {'M': 0, 'F': 0}
 
-        for entry in gender_counts:
-            gender = entry['gender']
-            count = entry['count']
+        for i in gender_counts:
+            gender = i['gender']
+            count = i['count']
             gender_counts_dict[gender] = count
 
         return Response(gender_counts_dict,  status=status.HTTP_200_OK)
@@ -207,9 +201,7 @@ class ClassReport(APIView):
 
         for course in courses:
             grades = Grade.objects.filter(lesson=course)
-
             average_grade = grades.aggregate(avg_grade=Avg('grade'))['avg_grade']
-
             subject_average_grade[course.subject.name] = average_grade
 
         class_report = {
